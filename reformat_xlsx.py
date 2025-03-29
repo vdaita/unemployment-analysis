@@ -27,13 +27,24 @@ def extract_tables_from_excel(excel_file):
         
         # Find rows with county names (assumption: county names contain "County")
         county_rows = []
+        is_unemployment = False
+
         for i, row in df.iterrows():
             # Convert row to string and check if it contains "County"
             row_str = ' '.join(str(x) for x in row.dropna().tolist())
+
+            if "unemployment rate" in row_str.lower():
+                is_unemployment = True
+                continue
+
             if "County" in row_str:
                 county_name = row_str.strip()
                 county_rows.append((i, county_name))
-        
+
+        if is_unemployment:
+            print(f"Skipping sheet '{sheet_name}' because it contains 'unemployment'")
+            continue
+
         # Process each county section
         for i, (county_row_idx, county_name) in enumerate(county_rows):
             # Determine the end of this county's data (either next county or end of sheet)
@@ -69,6 +80,9 @@ def process(excel_file: str, output_dir: str = "output"):
     aggregated_data = pd.DataFrame()
     
     for county, data in county_data.items():
+        if "city" in county.lower():
+            print(f"Skipping county: {county} because it might be a city")
+            continue
         if aggregated_data.empty:
             aggregated_data = data
         else:
