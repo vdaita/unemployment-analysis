@@ -83,7 +83,7 @@ def process(excel_file: str, output_dir: str = "output"):
     os.makedirs(output_dir, exist_ok=True)
     
     # Save the aggregated data to a single file
-    aggregated_file = os.path.join(output_dir, excel_file)
+    aggregated_file = os.path.join(output_dir, excel_file.split(".")[0] + "_aggregated.csv")
     aggregated_data.to_csv(aggregated_file, index=False)
     print(f"Saved aggregated data to {aggregated_file}")
 
