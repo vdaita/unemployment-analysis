@@ -3,7 +3,7 @@ import os
 import re
 from fire import Fire
 
-def extract_tables_from_excel(excel_file):
+def extract_tables_from_excel(excel_file, measure_data_type):
     """
     Extract tables from an Excel file where each table has a county name header
     followed by a data table with year, period, label, and observed value.
@@ -27,22 +27,22 @@ def extract_tables_from_excel(excel_file):
         
         # Find rows with county names (assumption: county names contain "County")
         county_rows = []
-        is_unemployment = False
+        is_measure_type = False
 
         for i, row in df.iterrows():
             # Convert row to string and check if it contains "County"
             row_str = ' '.join(str(x) for x in row.dropna().tolist())
 
-            if "unemployment rate" in row_str.lower():
-                is_unemployment = True
+            if row_str.strip().lower().endswith(measure_data_type.strip()):
+                is_measure_type = True
                 continue
 
             if "County" in row_str:
                 county_name = row_str.strip()
                 county_rows.append((i, county_name))
 
-        if is_unemployment:
-            print(f"Skipping sheet '{sheet_name}' because it contains 'unemployment'")
+        if not is_measure_type:
+            print(f"Skipping sheet '{sheet_name}' because it doesn't contain {measure_data_type}")
             continue
 
         # Process each county section
@@ -72,9 +72,11 @@ def extract_tables_from_excel(excel_file):
                 county_data[county_name] = county_df   
     return county_data
 
-def process(excel_file: str, output_dir: str = "output"):    
+def process(excel_file: str, measure_data_type: str, output_dir: str = "output"):    
     # Extract tables
-    county_data = extract_tables_from_excel(excel_file)
+    county_data = extract_tables_from_excel(excel_file, measure_data_type)
+
+    measure_data_slug = measure_data_type.replace(" ", "_").lower().strip()
     
     # Create an aggregated dataframe
     aggregated_data = pd.DataFrame()
@@ -97,7 +99,7 @@ def process(excel_file: str, output_dir: str = "output"):
     os.makedirs(output_dir, exist_ok=True)
     
     # Save the aggregated data to a single file
-    aggregated_file = os.path.join(output_dir, excel_file.split(".")[0] + "_aggregated.csv")
+    aggregated_file = os.path.join(output_dir, excel_file.split(".")[0] + f"_{measure_data_slug}_aggregated.csv")
     aggregated_data.to_csv(aggregated_file, index=False)
     print(f"Saved aggregated data to {aggregated_file}")
 
